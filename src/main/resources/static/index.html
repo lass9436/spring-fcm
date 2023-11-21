@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="kor">
+<head>
+    <meta charset="UTF-8">
+    <title>firebase test</title>
+</head>
+<body>
+
+    <h1>FCM 테스트</h1>
+
+    <label for="title">Title:</label>
+    <input type="text" id="title" name="title" required>
+    <br>
+    <label for="content">Content:</label>
+    <input type="text" id="content" name="content" required>
+    <br>
+    <button type="button" onclick="submitData()">Submit</button>
+
+    <div id="message-container"></div>
+
+    <!-- Firebase 앱 초기화 -->
+    <script>
+        function submitData() {
+            const title = document.getElementById("title").value;
+            const content = document.getElementById("content").value;
+
+            const data = {
+                title: title,
+                content: content
+            };
+
+            fetch('/send-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+    </script>
+    <script src="firebaseClientKey.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-messaging.js";
+
+        function requestPermission() {
+            console.log('Requesting permission...');
+                Notification.requestPermission().then((permission) => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+                    }
+            })
+        };
+
+        requestPermission();
+
+        const app = initializeApp(firebaseConfig);
+        const messaging = getMessaging(app);
+
+        onMessage(messaging, (payload) => {
+            console.log("onMessage", payload);
+            const newMessageDiv = document.createElement('div');
+            newMessageDiv.className = 'message';
+            newMessageDiv.innerHTML = `<strong>${payload.data.title}</strong>: ${payload.data.content}`;
+            const messageContainer = document.getElementById('message-container');
+            messageContainer.appendChild(newMessageDiv);
+        });
+
+        getToken(messaging).then(token => {
+            console.log('Firebase Token:', token);
+            fetch('/register-token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token: token }),
+            })
+        }).catch(() => {});
+
+    </script>
+</body>
+</html>
