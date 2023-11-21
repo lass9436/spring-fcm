@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Configuration
-public class firebaseConfig {
+public class FirebaseConfig {
 
     @Bean
     public FirebaseApp firbaseApp() throws IOException {
