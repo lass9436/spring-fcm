@@ -38,3 +38,4 @@ out/
 
 ### Firebase ###
 /src/main/resources/firebase/
+/src/main/resources/static/firebaseClientKey.js
