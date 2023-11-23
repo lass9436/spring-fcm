@@ -70,7 +70,7 @@ public class FirebaseService {
 
     }
 
-    private static BatchResponse sendFirebaseMessage(MulticastMessage message) {
+    private BatchResponse sendFirebaseMessage(MulticastMessage message) {
         try {
             return FirebaseMessaging.getInstance().sendEachForMulticast(message);
         } catch (FirebaseMessagingException e) {
