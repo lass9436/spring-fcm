@@ -20,8 +20,12 @@ public class FirebaseService {
     @Autowired
     private final TokenRepository tokenRepository;
 
-    public FirebaseService(TokenRepository tokenRepository) {
+    @Autowired
+    private final FirebaseSendService firebaseSendService;
+
+    public FirebaseService(TokenRepository tokenRepository, FirebaseSendService firebaseSendService) {
         this.tokenRepository = tokenRepository;
+        this.firebaseSendService = firebaseSendService;
     }
 
     public void registerToken(String firebaseToken) {
@@ -37,28 +41,28 @@ public class FirebaseService {
         // BATCH_SIZE만큼의 토큰 리스트를 리스트로 가지는 batches를 생성
         List<List<String>> batches = IntStream.range(0, (tokenList.size() + BATCH_SIZE - 1) / BATCH_SIZE)
             .mapToObj(i -> tokenList.subList(i * BATCH_SIZE, Math.min((i + 1) * BATCH_SIZE, tokenList.size()))
-                    .stream()
-                    .map(Token::getValue)
-                    .toList())
+                .stream()
+                .map(Token::getValue)
+                .toList())
             .toList();
 
         // BATCH_SIZE만큼의 토큰 리스트로 빌드한 멀티캐스트메세지의 리스트를 생성
         List<MulticastMessage> multicastMessageList = batches.stream()
-                .map(batch -> MulticastMessage.builder()
-                        .putData("title", messageRequest.getTitle())
-                        .putData("content", messageRequest.getContent())
-                        .addAllTokens(batch)
-                        .build())
-                .toList();
+            .map(batch -> MulticastMessage.builder()
+                .putData("title", messageRequest.getTitle())
+                .putData("content", messageRequest.getContent())
+                .addAllTokens(batch)
+                .build())
+            .toList();
 
         // send를 비동기처리하기 위한 future 리스트 생성
         List<CompletableFuture<BatchResponse>> sendFutures = multicastMessageList.stream()
-                .map(message -> CompletableFuture.supplyAsync(() -> sendFirebaseMessage(message)))
-                .toList();
+            .map(message -> CompletableFuture.supplyAsync(() -> firebaseSendService.sendFirebaseMessage(message)))
+            .toList();
 
         // future를 조합하여 대기
         CompletableFuture<Void> allOf = CompletableFuture.allOf(
-                sendFutures.toArray(new CompletableFuture[0]));
+            sendFutures.toArray(new CompletableFuture[0]));
 
         // 비동기 작업이 완료될 때까지 대기
         try {
@@ -70,13 +74,6 @@ public class FirebaseService {
 
     }
 
-    private BatchResponse sendFirebaseMessage(MulticastMessage message) {
-        try {
-            return FirebaseMessaging.getInstance().sendEachForMulticast(message);
-        } catch (FirebaseMessagingException e) {
-            System.out.println(e.getMessage());
-            return null; // 또는 예외 처리에 따라 적절한 값을 반환
-        }
-    }
+
 
 }
