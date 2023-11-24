@@ -37,3 +37,5 @@ out/
 .vscode/
 
 
+/producer/src/main/resources/static/firebaseClientKey.js
+/consumer/src/main/resources/firebase/firebaseKey.json
